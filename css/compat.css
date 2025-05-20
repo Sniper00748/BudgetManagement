@@ -1,0 +1,38 @@
+/* 兼容性样式修复 */
+
+/* 修复 -webkit-text-size-adjust 问题 */
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* 修复 text-align: -webkit-match-parent 问题 */
+.selector-with-match-parent {
+  text-align: -webkit-match-parent;
+  text-align: match-parent;
+}
+
+/* 修复 color-adjust 问题 */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+}
+
+/* 避免使用内联样式 */
+.table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* 确保正确的样式顺序 */
+.text-align-fix {
+  text-align: -webkit-match-parent;
+  text-align: inherit;
+}

@@ -1,0 +1,86 @@
+/* 预算跟踪工具样式 */
+
+/* 全局样式 */
+body {
+    font-family: 'Microsoft YaHei', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* 卡片样式增强 */
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.card-header {
+    font-weight: bold;
+    padding: 12px 15px;
+}
+
+/* 预算状态样式 */
+.budget-summary h4 {
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.budget-summary h6 {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* 进度条样式 */
+.progress {
+    height: 20px;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* 警告消息样式 */
+.alert {
+    border-radius: 8px;
+    padding: 10px 15px;
+}
+
+/* 表格样式 */
+.table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* 按钮样式增强 */
+.btn {
+    border-radius: 5px;
+    font-weight: 500;
+}
+
+/* 图表容器 */
+#budget-chart {
+    max-height: 400px;
+}
+
+/* 分类饼图容器 */
+#budget-category-chart,
+#actual-category-chart {
+    max-height: 250px;
+    height: 250px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 15px 10px;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}

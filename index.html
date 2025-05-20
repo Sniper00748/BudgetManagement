@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>预算跟踪工具</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/compat.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">预算跟踪工具</h1>
+        
+        <div class="row">
+            <!-- 项目信息设置 -->
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">项目信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="project-form">
+                            <div class="mb-3">
+                                <label for="project-name" class="form-label">项目名称</label>
+                                <input type="text" class="form-control" id="project-name" required autocomplete="off">
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="start-date" class="form-label">开始日期</label>
+                                    <input type="date" class="form-control" id="start-date" required autocomplete="off">
+                                </div>
+                                <div class="col">
+                                    <label for="end-date" class="form-label">结束日期</label>
+                                    <input type="date" class="form-control" id="end-date" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="initial-budget" class="form-label">初始预算</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">¥</span>
+                                    <input type="number" class="form-control" id="initial-budget" min="0" step="0.01" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="warning-threshold" class="form-label">预警阈值 (%)</label>
+                                <input type="number" class="form-control" id="warning-threshold" min="1" max="100" value="20" autocomplete="off">
+                                <div class="form-text">当剩余预算低于此百分比时发出警告</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" title="保存项目信息">保存项目信息</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 预算状态概览 -->
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">预算状态</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="budget-summary">
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <h6>当前预算:</h6>
+                                    <h4 id="summary-initial">¥0.00</h4>
+                                </div>
+                                <div class="col">
+                                    <h6>当前剩余:</h6>
+                                    <h4 id="summary-remaining">¥0.00</h4>
+                                </div>
+                            </div>
+                            <div id="budget-settings-info" class="alert alert-info d-none mb-3"></div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <h6>已使用:</h6>
+                                    <h4 id="summary-used">¥0.00</h4>
+                                </div>
+                                <div class="col">
+                                    <h6>使用比例:</h6>
+                                    <h4 id="summary-percentage">0%</h4>
+                                </div>
+                            </div>
+                            <div class="progress mb-3">
+                                <div id="budget-progress" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="预算使用进度"></div>
+                            </div>
+                            <div id="warning-message" class="alert alert-warning d-none">
+                                <i class="bi bi-exclamation-triangle-fill"></i> <span id="warning-text"></span>
+                            </div>
+                        </div>
+                        <!-- 删除此处重复的分页控件 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 图表设置 -->
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">图表显示</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="chart-type" class="form-label">图表类型</label>
+                            <select class="form-select" id="chart-type" title="选择图表类型">
+                                <option value="line">折线图</option>
+                                <option value="bar">柱状图</option>
+                                <option value="area">面积图</option>
+                            </select>
+                        </div>
+                        <button id="update-chart" class="btn btn-success" title="更新图表">更新图表</button>
+                    </div>
+                </div>
+            </div>
+                
+
+            </div>
+        </div>
+        
+        <!-- 预算图表 -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">预算计划与实际支出对比</h5>
+                        <button id="reset-zoom" class="btn btn-sm btn-outline-light" title="重置缩放">
+                            <i class="bi bi-arrows-fullscreen"></i> 重置缩放
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2 text-muted small">提示：直接拖动可平移图表，使用鼠标滚轮或触控板捏合可缩放图表</div>
+                        <canvas id="budget-chart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分类占比图表 -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">分类占比分析</h5>
+                        <div>
+                            <select class="form-select form-select-sm" id="category-chart-type" title="选择数据类型">
+                                <option value="expense">支出</option>
+                                <option value="income">收入</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <h6 class="text-center">预算分类占比</h6>
+                                    <canvas id="budget-category-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <h6 class="text-center">实际分类占比</h6>
+                                    <canvas id="actual-category-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 交易记录 -->
+        <div class="row mb-3">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">添加交易/预算记录</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="transaction-form">
+                            <div class="mb-3">
+                                <label for="transaction-date" class="form-label">日期</label>
+                                <input type="date" class="form-control" id="transaction-date" required autocomplete="off">
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="transaction-type" class="form-label">类型</label>
+                                    <select class="form-select" id="transaction-type" required title="选择交易类型">
+                                        <option value="expense">支出</option>
+                                        <option value="income">收入</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label for="transaction-record-type" class="form-label">记录类型</label>
+                                    <select class="form-select" id="transaction-record-type" required title="选择记录类型">
+                                        <option value="actual">实际</option>
+                                        <option value="budget">预算</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transaction-category" class="form-label">类别</label>
+                                <input type="text" class="form-control" id="transaction-category" required autocomplete="off">
+                            </div>
+                            <div class="mb-3">
+                                <label for="transaction-amount" class="form-label">金额</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">¥</span>
+                                    <input type="number" class="form-control" id="transaction-amount" min="0.01" step="0.01" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transaction-description" class="form-label">描述</label>
+                                <textarea class="form-control" id="transaction-description" rows="2" autocomplete="off"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" title="添加交易记录">添加记录</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">批量导入</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>您可以使用Excel模板批量导入交易数据</p>
+                        <div class="mb-3">
+                            <a id="download-template" href="templates/budget_template.xlsx" class="btn btn-outline-primary" download title="下载Excel模板">
+                                <i class="bi bi-download"></i> 下载Excel模板
+                            </a>
+                        </div>
+                        <div class="mb-3">
+                            <label for="import-file" class="form-label">选择Excel文件</label>
+                            <input class="form-control" type="file" id="import-file" accept=".xlsx" autocomplete="off">
+                        </div>
+                        <button id="import-button" class="btn btn-secondary" title="导入Excel数据">
+                            <i class="bi bi-upload"></i> 导入数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 交易记录表格 -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">交易记录</h5>
+                        <div>
+                            <button id="export-data" class="btn btn-sm btn-outline-light me-2" title="导出数据到Excel">
+                                <i class="bi bi-file-excel"></i> 导出Excel
+                            </button>
+                            <button id="export-json" class="btn btn-sm btn-outline-light me-2" title="保存到JSON文件">
+                                <i class="bi bi-file-earmark-arrow-down"></i> 保存到文件
+                            </button>
+                            <button id="import-json" class="btn btn-sm btn-outline-light" title="从JSON文件导入">
+                                <i class="bi bi-file-earmark-arrow-up"></i> 从文件导入
+                            </button>
+                        </div>
+                        <!-- 删除此处重复的分页控件 -->
+                    </div>
+                    <div class="card-body">
+                        <!-- 搜索和筛选 -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="search-transactions" placeholder="搜索类别或描述..." autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filter-type" title="筛选交易类型">
+                                    <option value="all">所有类型</option>
+                                    <option value="expense">支出</option>
+                                    <option value="income">收入</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filter-record-type" title="筛选记录类型">
+                                    <option value="all">所有记录类型</option>
+                                    <option value="actual">实际</option>
+                                    <option value="budget">预算</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="items-per-page" title="设置每页显示条数">
+                                    <option value="10">10条/页</option>
+                                    <option value="20" selected>20条/页</option>
+                                    <option value="50">50条/页</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>日期</th>
+                                        <th>类型</th>
+                                        <th>记录类型</th>
+                                        <th>类别</th>
+                                        <th>金额</th>
+                                        <th>描述</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactions-table">
+                                    <!-- 交易记录将在这里动态添加 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- 分页控件 -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                显示 <span id="total-items">0</span> 条记录
+                            </div>
+                            <div class="btn-group">
+                                <button id="prev-page" class="btn btn-outline-secondary" disabled>
+                                    <i class="bi bi-chevron-left"></i> 上一页
+                                </button>
+                                <button class="btn btn-outline-secondary" disabled>
+                                    <span id="current-page">1/1</span>
+                                </button>
+                                <button id="next-page" class="btn btn-outline-secondary" disabled>
+                                    下一页 <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本引用 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
